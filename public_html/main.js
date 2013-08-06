@@ -6,15 +6,13 @@ var ctx = canvas.getContext( "2d" );
 var FPS = 30;
 var cellsize = 100;
 
-function Cell(x, y, width, height, row, col, value) {
+function Cell(x, y, row, col, value) {
     this.x = x;
     this.y = y;
-    this.width = width;
-    this.height = height;
-    this.value = value;
-    this.selected = false;
     this.row = row;
     this.col = col;
+    this.value = value;
+    this.selected = false;
     this.canMove = function() {
         if (this.row > 0) {
             neiborRow = this.row - 1;
@@ -52,7 +50,7 @@ function Cell(x, y, width, height, row, col, value) {
             ctx.lineWidth="1";
             ctx.strokeStyle="blue";
         }
-        ctx.rect(this.x, this.y, this.width, this.height);
+        ctx.rect(this.x, this.y, cellsize, cellsize);
         ctx.font="30px Arial";
         ctx.textAlign = 'center';
         ctx.fillText(this.value, this.x + cellsize / 2, this.y + cellsize / 2 + 10);
@@ -73,7 +71,7 @@ function Board(x, y, size, cellsize) {
         for (var i = 0; i < size; i++) {        
             var row = [];
             for (var j = 0; j < size; j++) {
-                row.push(new Cell(x, y, cellsize, cellsize, i, j, count++));
+                row.push(new Cell(x, y, i, j, count++));
                 x += cellsize;
             }
             cells.push(row);
@@ -137,8 +135,8 @@ window.onmousedown = function(e) {
     for (var i = 0; i < board.size; i++) {    
         for (var j = 0; j < board.size; j++) {
             if (!moved
-                && mousePos.x >= board.cells[i][j].x && board.cells[i][j].x + board.cells[i][j].width >= mousePos.x
-                && mousePos.y >= board.cells[i][j].y && board.cells[i][j].y + board.cells[i][j].height >= mousePos.y) {
+                && mousePos.x >= board.cells[i][j].x && board.cells[i][j].x + cellsize >= mousePos.x
+                && mousePos.y >= board.cells[i][j].y && board.cells[i][j].y + cellsize >= mousePos.y) {
                 board.cells[i][j].selected = true;
                 movePos = board.cells[i][j].canMove();
                 if (movePos !== null) {
