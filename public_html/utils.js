@@ -3,6 +3,10 @@
  * and open the template in the editor.
  */
 
+function assert(condition, message) { 
+    if (!condition)
+        throw Error("Assert failed" + (typeof message !== "undefined" ? ": " + message : ""));
+}
 
  function measureTextHeight(left, top, width, height,text) {
 

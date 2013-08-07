@@ -13,6 +13,25 @@ function Cell(x, y, row, col, value) {
     this.col = col;
     this.value = value;
     this.selected = false;
+    this.recursiveMove = function(dirRow, dirCol) {
+        // assert((dirRow !== 0 && dirCol === 0
+        //     || (dirRow === 0 && dirCol !== 0)
+        //     && (dirRow + dirCol) * (dirRow + dirCol) === 1)
+        var newRow = this.row + dirRow;
+        var newCol = this.col + dirCol;
+        if (newRow < 0 || newRow > size - 1 || newCol < 0 || newCol > size - 1)
+            return false;
+        else if (board.cells[newRow][newCol].value === 0)
+            return true;
+        else 
+            return board.cells[newRow][newCol].recursiveMove(dirRow, dirCol);
+    };
+    this.canRecursiveMove = function() {
+        return this.recursiveMove(1, 0)
+            || this.recursiveMove(-1, 0)
+            || this.recursiveMove(0, 1)
+            || this.recursiveMove(0, -1)
+    };
     this.canMove = function() {
         if (this.row > 0) {
             neiborRow = this.row - 1;
@@ -40,17 +59,21 @@ function Cell(x, y, row, col, value) {
     this.draw = function() {
         if (this.value === 0) return;
         ctx.beginPath();
+        ctx.fillStyle="white";
+        ctx.lineWidth="1";
+        ctx.strokeStyle="blue";
         if (this.selected) {
             ctx.lineWidth="3";
             ctx.strokeStyle="red";
         } else if (this.canMove() !== null) {
-            ctx.lineWidth="3";
-            ctx.strokeStyle="yellow";
-        } else {
-            ctx.lineWidth="1";
-            ctx.strokeStyle="blue";
-        }
+            ctx.fillStyle="gold";
+        } else if (this.canRecursiveMove()) {
+            ctx.fillStyle="yellow";
+        } 
+        ctx.fillRect(this.x, this.y, cellsize, cellsize);
         ctx.rect(this.x, this.y, cellsize, cellsize);
+        ctx.stroke();
+        ctx.fillStyle="black";
         ctx.font="30px Arial";
         ctx.textAlign = 'center';
         ctx.fillText(this.value, this.x + cellsize / 2, this.y + cellsize / 2 + 10);
@@ -165,5 +188,10 @@ window.onmousemove = function( e ) {
     document.getElementById( "y" ).innerHTML = mousePos.y;;
 };
 
-var board = new Board(0, 0, 4, cellsize);
+function test() {
+    assert(false, "somethings wrong");
+}
+
+var size = 4;
+var board = new Board(0, 0, size, cellsize);
 setInterval( tick, 1000 / FPS );
