@@ -13,47 +13,34 @@ function Cell(x, y, row, col, value) {
     this.col = col;
     this.value = value;
     this.selected = false;
-    this.recursiveMove = function(dirRow, dirCol) {
-        // assert((dirRow !== 0 && dirCol === 0
-        //     || (dirRow === 0 && dirCol !== 0)
-        //     && (dirRow + dirCol) * (dirRow + dirCol) === 1)
+    this.canMoveDirection = function(dirRow, dirCol, dryRun) {
+         assert((dirRow !== 0 && dirCol === 0
+             || (dirRow === 0 && dirCol !== 0)
+             && ((dirRow + dirCol) * (dirRow + dirCol) === 1)),
+                "dirRow, dirCol: one must be 1, the other 0");
+        var canMove = false;
         var newRow = this.row + dirRow;
         var newCol = this.col + dirCol;
         if (newRow < 0 || newRow > size - 1 || newCol < 0 || newCol > size - 1)
-            return false;
-        else if (board.cells[newRow][newCol].value === 0)
-            return true;
-        else 
-            return board.cells[newRow][newCol].recursiveMove(dirRow, dirCol);
+            canMove = false;
+        else if (board.cells[newRow][newCol].value === 0) {
+            canMove = true;
+        } else {
+            canMove = board.cells[newRow][newCol].canMoveDirection(dirRow, dirCol, dryRun);
+        }
+        if (canMove && !dryRun) {
+            board.cells[newRow][newCol].value = this.value;
+            board.cells[newRow][newCol].selected = false;
+            this.value = 0;
+            this.selected = false;
+        }
+        return canMove;
     };
-    this.canRecursiveMove = function() {
-        return this.recursiveMove(1, 0)
-            || this.recursiveMove(-1, 0)
-            || this.recursiveMove(0, 1)
-            || this.recursiveMove(0, -1)
-    };
-    this.canMove = function() {
-        if (this.row > 0) {
-            neiborRow = this.row - 1;
-            if (board.cells[neiborRow][col].value === 0)
-                return {row: neiborRow, col: col};
-        }
-        if (this.row < board.size - 1) {
-            neiborRow = this.row + 1;
-            if (board.cells[neiborRow][col].value === 0)
-                return {row: neiborRow, col: col};
-        }
-        if (this.col > 0) {
-            neiborCol = this.col - 1;
-            if (board.cells[row][neiborCol].value === 0)
-                return {row: row, col: neiborCol};
-        }
-        if (this.col < board.size - 1) {
-            neiborCol = this.col + 1;
-            if (board.cells[row][neiborCol].value === 0)
-                return {row: row, col: neiborCol};
-        }
-        return null;
+    this.canMove = function(dryRun) {
+        return this.canMoveDirection(1, 0, dryRun)
+            || this.canMoveDirection(-1, 0, dryRun)
+            || this.canMoveDirection(0, 1, dryRun)
+            || this.canMoveDirection(0, -1, dryRun);
     };
     
     this.draw = function() {
@@ -65,10 +52,8 @@ function Cell(x, y, row, col, value) {
         if (this.selected) {
             ctx.lineWidth="3";
             ctx.strokeStyle="red";
-        } else if (this.canMove() !== null) {
+        } else if (this.canMove(true)) {
             ctx.fillStyle="gold";
-        } else if (this.canRecursiveMove()) {
-            ctx.fillStyle="yellow";
         } 
         ctx.fillRect(this.x, this.y, cellsize, cellsize);
         ctx.rect(this.x, this.y, cellsize, cellsize);
@@ -154,21 +139,12 @@ function tick() {
 window.onmousedown = function(e) {
     document.getElementById( "output" ).innerHTML = "down";
     var mousePos = getMousePos(canvas, e);
-    var moved = false;
     for (var i = 0; i < board.size; i++) {    
         for (var j = 0; j < board.size; j++) {
-            if (!moved
-                && mousePos.x >= board.cells[i][j].x && board.cells[i][j].x + cellsize >= mousePos.x
+            if (mousePos.x >= board.cells[i][j].x && board.cells[i][j].x + cellsize >= mousePos.x
                 && mousePos.y >= board.cells[i][j].y && board.cells[i][j].y + cellsize >= mousePos.y) {
                 board.cells[i][j].selected = true;
-                movePos = board.cells[i][j].canMove();
-                if (movePos !== null) {
-                    board.cells[movePos.row][movePos.col].value = board.cells[i][j].value;
-                    board.cells[movePos.row][movePos.col].selected = false;
-                    board.cells[i][j].value = 0;
-                    board.cells[i][j].selected = false;
-                    moved = true;
-                }
+                board.cells[i][j].canMove(false);
             } else {
                 board.cells[i][j].selected = false;
             }
