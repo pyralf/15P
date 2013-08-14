@@ -5,19 +5,43 @@ var ctx = canvas.getContext( "2d" );
 // Frames-per-second
 var FPS = 30;
 var cellsize = 100;
+var v = 200;
+var moveCount = 0;
 
 function Cell(x, y, row, col, value) {
     this.x = x;
     this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.x1 = 0;
+    this.y1 = 0;
     this.row = row;
     this.col = col;
     this.value = value;
     this.selected = false;
+    
+    this.update = function() {
+        this.x = this.x + this.vx / FPS;
+        if (this.vx < 0 && this.x <= this.x1
+            || this.vx > 0 && this.x >= this.x1) {
+            this.x = this.x1;
+            this.vx = 0;
+            moveCount--;
+        }
+        this.y = this.y + this.vy / FPS;
+        if (this.vy < 0 && this.y <= this.y1
+            || this.vy > 0 && this.y >= this.y1) {
+            this.y = this.y1;
+            this.vy = 0;
+            moveCount--;
+        }            
+    };
+    
     this.canMoveDirection = function(dirRow, dirCol, dryRun) {
-         assert((dirRow !== 0 && dirCol === 0
-             || (dirRow === 0 && dirCol !== 0)
-             && ((dirRow + dirCol) * (dirRow + dirCol) === 1)),
-                "dirRow, dirCol: one must be 1, the other 0");
+//         assert((dirRow !== 0 && dirCol === 0
+//             || (dirRow === 0 && dirCol !== 0)
+//             && ((dirRow + dirCol) * (dirRow + dirCol) === 1)),
+//                "dirRow, dirCol: one must be 1, the other 0");
         var canMove = false;
         var newRow = this.row + dirRow;
         var newCol = this.col + dirCol;
@@ -29,18 +53,30 @@ function Cell(x, y, row, col, value) {
             canMove = board.cells[newRow][newCol].canMoveDirection(dirRow, dirCol, dryRun);
         }
         if (canMove && !dryRun) {
-            board.cells[newRow][newCol].value = this.value;
-            board.cells[newRow][newCol].selected = false;
-            this.value = 0;
-            this.selected = false;
+//            board.cells[newRow][newCol].value = this.value;
+//            board.cells[newRow][newCol].selected = false;
+            
+            this.vx = v * dirCol;
+            this.x1 = this.x + cellsize * dirCol;
+            this.vy = v * dirRow;
+            this.y1 = this.y + cellsize * dirRow;
+            moveCount++;
         }
-        return canMove;
+        if (canMove)
+            return {row: newRow, col: newCol};
+        else
+            return null;
     };
     this.canMove = function(dryRun) {
-        return this.canMoveDirection(1, 0, dryRun)
-            || this.canMoveDirection(-1, 0, dryRun)
-            || this.canMoveDirection(0, 1, dryRun)
-            || this.canMoveDirection(0, -1, dryRun);
+        var newPos = this.canMoveDirection(1, 0, dryRun);
+        if (newPos !== null) return newPos;
+        newPos = this.canMoveDirection(-1, 0, dryRun);
+        if (newPos !== null) return newPos;
+        newPos = this.canMoveDirection(0, -1, dryRun);
+        if (newPos !== null) return newPos;
+        newPos = this.canMoveDirection(0, -1, dryRun);
+        if (newPos !== null) return newPos;
+        return null;
     };
     
     this.draw = function() {
@@ -105,6 +141,14 @@ function Board(x, y, size, cellsize) {
             }
         }
     };
+    
+    this.update = function() {
+        for (var i = 0; i < this.size; i++) {
+            for (var j = 0; j < this.size; j++) {
+                this.cells[i][j].update();
+            }
+        }
+    };
 };
 
 // Game loop draw function
@@ -115,7 +159,7 @@ function draw() {
 
 // Game loop update function
 function update() {
-    
+    board.update();
 }
 
 function tick() {
@@ -137,14 +181,24 @@ function tick() {
       
 // Mouse button pressed
 window.onmousedown = function(e) {
+    if (moveCount > 0) return;
+    
     document.getElementById( "output" ).innerHTML = "down";
     var mousePos = getMousePos(canvas, e);
     for (var i = 0; i < board.size; i++) {    
         for (var j = 0; j < board.size; j++) {
             if (mousePos.x >= board.cells[i][j].x && board.cells[i][j].x + cellsize >= mousePos.x
                 && mousePos.y >= board.cells[i][j].y && board.cells[i][j].y + cellsize >= mousePos.y) {
-                board.cells[i][j].selected = true;
-                board.cells[i][j].canMove(false);
+                var newPos = board.cells[i][j].canMove(false);
+                if (newPos !== null) {
+                    // TODO doMove()
+//                    var tempCell = board.cells[newPos.row][newPos.col];
+//                    board.cells[newPos.row][newPos.col] = board.cells[i][j];
+//                    board.cells[i][j] = tempCell;
+//                    board.cells[i][j].selected = false;
+                } else {
+                    board.cells[i][j].selected = true;
+                }
             } else {
                 board.cells[i][j].selected = false;
             }
