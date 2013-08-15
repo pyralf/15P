@@ -82,11 +82,11 @@ function Cell(x, y, row, col, value) {
         ctx.fillStyle="white";
         ctx.lineWidth="1";
         ctx.strokeStyle="blue";
-        if (this.selected) {
+        if (this.canMove(true)) {
+            ctx.fillStyle="gold";
+        } else if (this.selected) {
             ctx.lineWidth="3";
             ctx.strokeStyle="red";
-        } else if (this.canMove(true)) {
-            ctx.fillStyle="gold";
         } 
         ctx.fillRect(this.x, this.y, cellsize, cellsize);
         ctx.rect(this.x, this.y, cellsize, cellsize);
@@ -178,17 +178,22 @@ function tick() {
       
 // Mouse button pressed
 window.onmousedown = function(e) {
-    if (moveCount > 0) return;
-    
+    if (moveCount > 0)
+        return;
     document.getElementById( "output" ).innerHTML = "down";
     var mousePos = getMousePos(canvas, e);
     for (var i = 0; i < board.size; i++) {    
         for (var j = 0; j < board.size; j++) {
-            if (mousePos.x >= board.cells[i][j].x && board.cells[i][j].x + cellsize >= mousePos.x
-                && mousePos.y >= board.cells[i][j].y && board.cells[i][j].y + cellsize >= mousePos.y) {
+            if (mousePos.x >= board.cells[i][j].x 
+                && board.cells[i][j].x + cellsize >= mousePos.x
+                && mousePos.y >= board.cells[i][j].y 
+                && board.cells[i][j].y + cellsize >= mousePos.y)
+            {
                 if (board.cells[i][j].canMove(false)) {
                     board.cells[i][j].selected = false;
-                } else {
+                } else if (moveCount === 0) {
+                    // Check moveCount again! Seems that it may be altered
+                    // while this function is running.
                     board.cells[i][j].selected = true;
                 }
             } else {
