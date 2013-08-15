@@ -5,7 +5,7 @@ var ctx = canvas.getContext( "2d" );
 // Frames-per-second
 var FPS = 30;
 var cellsize = 100;
-var v = 200;
+var v = 300;
 var moveCount = 0;
 
 function Cell(x, y, row, col, value) {
@@ -38,6 +38,7 @@ function Cell(x, y, row, col, value) {
     };
     
     this.canMoveDirection = function(dirRow, dirCol, dryRun) {
+        if (moveCount > 0) return false;
 //         assert((dirRow !== 0 && dirCol === 0
 //             || (dirRow === 0 && dirCol !== 0)
 //             && ((dirRow + dirCol) * (dirRow + dirCol) === 1)),
@@ -53,30 +54,26 @@ function Cell(x, y, row, col, value) {
             canMove = board.cells[newRow][newCol].canMoveDirection(dirRow, dirCol, dryRun);
         }
         if (canMove && !dryRun) {
-//            board.cells[newRow][newCol].value = this.value;
-//            board.cells[newRow][newCol].selected = false;
+            board.cells[newRow][newCol].value = this.value;
+            board.cells[newRow][newCol].x = this.x;
+            board.cells[newRow][newCol].y = this.y;
             
-            this.vx = v * dirCol;
-            this.x1 = this.x + cellsize * dirCol;
-            this.vy = v * dirRow;
-            this.y1 = this.y + cellsize * dirRow;
+            board.cells[newRow][newCol].vx = v * dirCol;
+            board.cells[newRow][newCol].x1 = this.x + cellsize * dirCol;
+            board.cells[newRow][newCol].vy = v * dirRow;
+            board.cells[newRow][newCol].y1 = this.y + cellsize * dirRow;
+            this.value = 0;
+            
             moveCount++;
         }
-        if (canMove)
-            return {row: newRow, col: newCol};
-        else
-            return null;
+        return canMove;
     };
     this.canMove = function(dryRun) {
-        var newPos = this.canMoveDirection(1, 0, dryRun);
-        if (newPos !== null) return newPos;
-        newPos = this.canMoveDirection(-1, 0, dryRun);
-        if (newPos !== null) return newPos;
-        newPos = this.canMoveDirection(0, -1, dryRun);
-        if (newPos !== null) return newPos;
-        newPos = this.canMoveDirection(0, -1, dryRun);
-        if (newPos !== null) return newPos;
-        return null;
+        if (moveCount > 0) return false;
+        return this.canMoveDirection(1, 0, dryRun)
+            || this.canMoveDirection(-1, 0, dryRun)
+            || this.canMoveDirection(0, -1, dryRun)
+            || this.canMoveDirection(0, 1, dryRun);
     };
     
     this.draw = function() {
@@ -189,13 +186,8 @@ window.onmousedown = function(e) {
         for (var j = 0; j < board.size; j++) {
             if (mousePos.x >= board.cells[i][j].x && board.cells[i][j].x + cellsize >= mousePos.x
                 && mousePos.y >= board.cells[i][j].y && board.cells[i][j].y + cellsize >= mousePos.y) {
-                var newPos = board.cells[i][j].canMove(false);
-                if (newPos !== null) {
-                    // TODO doMove()
-//                    var tempCell = board.cells[newPos.row][newPos.col];
-//                    board.cells[newPos.row][newPos.col] = board.cells[i][j];
-//                    board.cells[i][j] = tempCell;
-//                    board.cells[i][j].selected = false;
+                if (board.cells[i][j].canMove(false)) {
+                    board.cells[i][j].selected = false;
                 } else {
                     board.cells[i][j].selected = true;
                 }
