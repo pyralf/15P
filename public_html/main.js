@@ -5,7 +5,7 @@ var ctx = canvas.getContext( "2d" );
 // Frames-per-second
 var FPS = 30;
 var cellsize = 100;
-var v = 300;
+var v = 500;
 var moveCount = 0;
 
 function Cell(x, y, row, col, value) {
@@ -212,13 +212,30 @@ window.onmouseup = function( e ) {
 window.onmousemove = function( e ) {
     var mousePos = getMousePos(canvas, e);
     document.getElementById( "x" ).innerHTML = mousePos.x;
-    document.getElementById( "y" ).innerHTML = mousePos.y;;
+    document.getElementById( "y" ).innerHTML = mousePos.y;
 };
 
 function test() {
     assert(false, "somethings wrong");
 }
 
+function swapCells(n, m) {
+    var cell1 = board.cells[Math.floor(n / (size))][n % (size)];
+    var cell2 = board.cells[Math.floor(m / (size))][m % (size)];
+    
+    var temp = cell1.value;
+    cell1.value = cell2.value;
+    cell2.value = temp;
+}
+
+function shuffle() {
+    for (var i = 0; i < 100; i++) {
+        var n = Math.round(Math.random() * 15);
+        var m = Math.round(Math.random() * 15);
+        swapCells(n, m);
+    }
+}
+
 var size = 4;
 var board = new Board(0, 0, size, cellsize);
-setInterval( tick, 1000 / FPS );
+setInterval(tick, 1000 / FPS);
